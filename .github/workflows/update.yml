@@ -1,0 +1,57 @@
+name: Update
+
+on:
+  schedule:
+    - cron:  '08 8 * * 3'
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Configure Git
+        run: |
+          git config --global user.email "bot@modm.io"
+          git config --global user.name "modm update bot"
+      - name: Install JLink
+        run: |
+          wget -qL --post-data "accept_license_agreement=accepted" https://www.segger.com/downloads/jlink/JLink_Linux_x86_64.deb
+          sudo apt install ./JLink_Linux_x86_64.deb
+      - name: Update repository
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          wget -qL https://raw.githubusercontent.com/modm-ext/partial/main/partial.py
+          python3 update.py
+      - name: Git push
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git push origin main
+
+  update-master:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Configure Git
+        run: |
+          git config --global user.email "bot@modm.io"
+          git config --global user.name "modm update bot"
+      - name: Install JLink
+        run: |
+          wget -qL --post-data "accept_license_agreement=accepted" https://www.segger.com/downloads/jlink/JLink_Linux_x86_64.deb
+          sudo apt install ./JLink_Linux_x86_64.deb
+      - name: Update repository
+        run: |
+          wget -qL https://raw.githubusercontent.com/modm-ext/partial/main/partial.py
+          wget -qL https://raw.githubusercontent.com/modm-ext/segger-rtt/main/update.py
+          python3 update.py
+      - name: Git push
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git push origin master
